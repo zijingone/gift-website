@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: .
+    ports:
+      - "80:80"
+    volumes:
+      - uploads:/var/www/uploads
+    depends_on:
+      - backend
+    environment:
+      - NODE_ENV=production
+      - VITE_API_BASE_URL=http://api.your-domain.com
+
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - uploads:/var/www/uploads
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017/gift-website
+      - JWT_SECRET=${JWT_SECRET}
+      - UPLOAD_PATH=/var/www/uploads
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  uploads:
+  mongodb_data: 
