@@ -1,305 +1,596 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { mockApi } from '../../mockData';
-import ImageUpload from '../../components/ImageUpload';
-import ContentModule from '../../components/ContentModule';
+import { mockTags, mockApi } from '../../mockData';
+import ImageUploader from '../../components/ImageUploader';
+import '../../styles/admin.css';
 
 /**
  * 礼物编辑器组件
  * @component
- * @description 用于创建和编辑礼物信息的表单界面，支持图片上传、标签管理、内容模块编辑等功能
+ * @description 用于创建新礼物或编辑现有礼物的表单组件。
+ * 支持设置礼物的基本信息（名称、价格、描述等）、标签和状态。
+ * 
+ * @returns {JSX.Element} 礼物编辑器组件
  */
 function GiftEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     price: '',
+    description: '',
     coverImage: '',
     tags: [],
-    modules: [],
     status: 'draft',
+    modules: [],
     isScheduled: false,
-    publishTime: ''
+    publishAt: null
   });
-
-  useEffect(() => {
-    if (id) {
-      loadGift();
-    }
-  }, [id]);
 
   /**
    * 加载礼物数据
-   * @async
    * @function
-   * @description 根据 URL 参数中的 ID 加载对应礼物的详细信息
    */
-  const loadGift = async () => {
+  useEffect(() => {
+    const loadGift = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const gift = await mockApi.getGiftById(id);
+        if (gift) {
+          setFormData({
+            name: gift.name,
+            price: gift.price,
+            description: gift.description || '',
+            coverImage: gift.coverImage || '',
+            tags: gift.tags || [],
+            status: gift.status || 'draft',
+            modules: gift.modules || [],
+            isScheduled: gift.isScheduled || false,
+            publishAt: gift.publishAt || null
+          });
+        }
+      } catch (error) {
+        console.error('加载礼物数据失败:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadGift();
+  }, [id]);
+
+  /**
+   * 处理表单提交
+   * @function
+   * @param {React.FormEvent} e - 表单提交事件
+   */
+  const handleSubmit = async (e) => {
+    if (e) {
+      e.preventDefault();
+    }
+    
+    if (!formData.name || !formData.price) {
+      alert('请填写礼物名称和价格');
+      return;
+    }
+
     try {
-      const gift = await mockApi.getGiftById(id);
-      if (gift) {
-        setFormData({
-          ...gift,
-          coverImage: gift.image,
-          status: gift.status || 'draft'
+      setSaving(true);
+      // 准备要保存的数据
+      const giftData = {
+        ...formData,
+        price: Number(formData.price),
+        // 确保状态和发布时间的一致性
+        status: formData.status,
+        publishAt: formData.status === 'published' ? new Date().toISOString() :
+                  formData.status === 'scheduled' ? formData.publishAt :
+                  null
+      };
+
+      if (id) {
+        giftData.id = id;
+      }
+
+      console.log('准备保存的数据:', giftData); // 添加日志
+
+      const savedGift = await mockApi.saveGift(giftData);
+      if (savedGift) {
+        // 根据状态设置不同的消息
+        const message = formData.status === 'draft' 
+          ? '已保存为草稿'
+          : formData.status === 'scheduled'
+            ? '已设置定时发布'
+            : '发布成功';
+        
+        // 通过 state 传递消息
+        navigate('/admin/gifts', { 
+          state: { 
+            message,
+            type: 'success'
+          } 
         });
       }
     } catch (error) {
-      console.error('加载礼物失败:', error);
+      console.error('保存礼物失败:', error);
+      alert('保存失败，请重试');
+    } finally {
+      setSaving(false);
     }
   };
 
   /**
-   * 提交表单处理函数
-   * @async
+   * 处理发布按钮点击
    * @function
-   * @param {string} action - 操作类型，可选值：'draft'（草稿）或 'publish'（发布）
-   * @description 处理表单提交，支持保存草稿和发布两种操作，包含定时发布功能
+   * @param {'draft' | 'published'} status - 要设置的状态
    */
-  const handleSubmit = async (action) => {
-    try {
-      setLoading(true);
-      
-      let status = action;
-      let publishTime = formData.publishTime;
-      
-      if (action === 'publish') {
-        if (formData.isScheduled && formData.publishTime) {
-          status = 'scheduled';
+  const handlePublish = async (status) => {
+    // 准备要保存的数据
+    const giftData = {
+      ...formData,
+      price: Number(formData.price)
+    };
+
+    // 根据操作类型设置状态和发布时间
+    if (status === 'published') {
+      if (formData.isScheduled && formData.publishAt) {
+        // 如果设置了定时发布且有发布时间
+        const publishDate = new Date(formData.publishAt);
+        const now = new Date();
+        
+        if (publishDate > now) {
+          // 如果发布时间在未来，设为定时发布
+          giftData.status = 'scheduled';
+          giftData.publishAt = formData.publishAt;
         } else {
-          status = 'published';
-          publishTime = new Date().toISOString();
+          // 如果发布时间已过，设为立即发布
+          giftData.status = 'published';
+          giftData.publishAt = new Date().toISOString();
         }
+      } else {
+        // 立即发布
+        giftData.status = 'published';
+        giftData.publishAt = new Date().toISOString();
       }
+    } else {
+      // 保存草稿
+      giftData.status = 'draft';
+      giftData.publishAt = null;
+    }
 
-      const giftData = {
-        ...formData,
-        id: id || undefined,
-        status,
-        publishTime
-      };
+    if (id) {
+      giftData.id = id;
+    }
 
-      await mockApi.saveGift(giftData);
-      navigate('/admin/gifts');
+    try {
+      setSaving(true);
+      const savedGift = await mockApi.saveGift(giftData);
+      if (savedGift) {
+        const message = giftData.status === 'draft' 
+          ? '已保存为草稿'
+          : giftData.status === 'scheduled'
+            ? '已设置定时发布'
+            : '发布成功';
+        
+        navigate('/admin/gifts', { 
+          state: { 
+            message,
+            type: 'success'
+          } 
+        });
+      }
     } catch (error) {
       console.error('保存失败:', error);
+      alert('保存失败，请重试');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
   /**
-   * 表单字段变更处理函数
+   * 处理表单字段变更
    * @function
-   * @param {Object} e - 事件对象
-   * @description 处理表单输入字段的变更，更新组件状态
+   * @param {string} field - 字段名称
+   * @param {string | number | Array} value - 字段值
    */
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleFieldChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [field]: value
     }));
   };
 
   /**
-   * 图片变更处理函数
+   * 处理添加模块
    * @function
-   * @param {Array<string>} images - 图片 URL 数组
-   * @description 处理封面图片的上传和更新
    */
-  const handleImageChange = (images) => {
-    if (images && images.length > 0) {
-      setFormData(prev => ({
-        ...prev,
-        coverImage: images[0]
-      }));
-    }
+  const handleAddModule = () => {
+    setFormData(prev => ({
+      ...prev,
+      modules: [...prev.modules, {
+        id: Date.now(),
+        sections: [
+          { type: 'title', content: '' },
+          { type: 'text', content: '' }
+        ]
+      }]
+    }));
   };
 
   /**
-   * 标签切换处理函数
+   * 处理移除模块
    * @function
-   * @param {string|number} tagId - 标签 ID
-   * @description 处理标签的选择和取消选择
+   * @param {number} moduleIndex - 要移除的模块索引
    */
-  const handleTagToggle = (tagId) => {
+  const handleRemoveModule = (moduleIndex) => {
+    setFormData(prev => ({
+      ...prev,
+      modules: prev.modules.filter((_, index) => index !== moduleIndex)
+    }));
+  };
+
+  /**
+   * 处理模块移动
+   * @function
+   * @param {number} moduleIndex - 要移动的模块索引
+   * @param {'up' | 'down'} direction - 移动方向
+   */
+  const handleMoveModule = (moduleIndex, direction) => {
+    if (direction === 'up' && moduleIndex === 0) return;
+    if (direction === 'down' && moduleIndex === formData.modules.length - 1) return;
+
     setFormData(prev => {
-      const currentTags = prev.tags || [];
-      const tagExists = currentTags.find(tag => tag.id === tagId);
-      
-      if (tagExists) {
-        return {
-          ...prev,
-          tags: currentTags.filter(tag => tag.id !== tagId)
-        };
-      } else {
-        const newTag = mockTags.find(tag => tag.id === tagId);
-        return {
-          ...prev,
-          tags: [...currentTags, { id: newTag.id, name: newTag.name }]
-        };
-      }
+      const newModules = [...prev.modules];
+      const targetIndex = direction === 'up' ? moduleIndex - 1 : moduleIndex + 1;
+      const temp = newModules[moduleIndex];
+      newModules[moduleIndex] = newModules[targetIndex];
+      newModules[targetIndex] = temp;
+      return { ...prev, modules: newModules };
     });
   };
 
+  /**
+   * 处理添加章节
+   * @function
+   * @param {number} moduleIndex - 目标模块索引
+   * @param {'title' | 'text' | 'image'} type - 章节类型
+   */
+  const handleAddSection = (moduleIndex, type) => {
+    setFormData(prev => {
+      const newModules = [...prev.modules];
+      if (type === 'image') {
+        const hasImage = newModules[moduleIndex].sections.some(section => section.type === 'image');
+        if (hasImage) {
+          return prev;
+        }
+      }
+      newModules[moduleIndex].sections.push({ type, content: '' });
+      return { ...prev, modules: newModules };
+    });
+  };
+
+  /**
+   * 处理移除章节
+   * @function
+   * @param {number} moduleIndex - 目标模块索引
+   * @param {number} sectionIndex - 要移除的章节索引
+   */
+  const handleRemoveSection = (moduleIndex, sectionIndex) => {
+    setFormData(prev => {
+      const newModules = [...prev.modules];
+      newModules[moduleIndex].sections = newModules[moduleIndex].sections
+        .filter((_, index) => index !== sectionIndex);
+      return { ...prev, modules: newModules };
+    });
+  };
+
+  /**
+   * 处理章节上移
+   * @function
+   * @param {number} moduleIndex - 目标模块索引
+   * @param {number} sectionIndex - 要移动的章节索引
+   */
+  const handleMoveSectionUp = (moduleIndex, sectionIndex) => {
+    if (sectionIndex === 0) return;
+    setFormData(prev => {
+      const newModules = [...prev.modules];
+      const sections = [...newModules[moduleIndex].sections];
+      const temp = sections[sectionIndex];
+      sections[sectionIndex] = sections[sectionIndex - 1];
+      sections[sectionIndex - 1] = temp;
+      newModules[moduleIndex] = { ...newModules[moduleIndex], sections };
+      return { ...prev, modules: newModules };
+    });
+  };
+
+  /**
+   * 处理章节下移
+   * @function
+   * @param {number} moduleIndex - 目标模块索引
+   * @param {number} sectionIndex - 要移动的章节索引
+   */
+  const handleMoveSectionDown = (moduleIndex, sectionIndex) => {
+    setFormData(prev => {
+      const sections = prev.modules[moduleIndex].sections;
+      if (sectionIndex === sections.length - 1) return prev;
+      
+      const newModules = [...prev.modules];
+      const newSections = [...sections];
+      const temp = newSections[sectionIndex];
+      newSections[sectionIndex] = newSections[sectionIndex + 1];
+      newSections[sectionIndex + 1] = temp;
+      newModules[moduleIndex] = { ...newModules[moduleIndex], sections: newSections };
+      return { ...prev, modules: newModules };
+    });
+  };
+
+  /**
+   * 处理章节内容变更
+   * @function
+   * @param {number} moduleIndex - 目标模块索引
+   * @param {number} sectionIndex - 目标章节索引
+   * @param {string} value - 新的内容值
+   */
+  const handleSectionChange = (moduleIndex, sectionIndex, value) => {
+    setFormData(prev => {
+      const newModules = [...prev.modules];
+      newModules[moduleIndex].sections[sectionIndex].content = value;
+      return { ...prev, modules: newModules };
+    });
+  };
+
+  /**
+   * 处理返回按钮点击
+   * @function
+   */
+  const handleBack = async () => {
+    // 如果表单有内容，保存为草稿
+    if (formData.name || formData.price || formData.description || formData.coverImage || formData.tags.length > 0 || formData.modules.length > 0) {
+      try {
+        setSaving(true);
+        const giftData = {
+          ...formData,
+          status: 'draft',
+          price: formData.price ? Number(formData.price) : 0
+        };
+
+        if (id) {
+          giftData.id = id;
+        }
+
+        await mockApi.saveGift(giftData);
+      } catch (error) {
+        console.error('保存草稿失败:', error);
+      } finally {
+        setSaving(false);
+      }
+    }
+    
+    navigate('/admin/gifts');
+  };
+
+  if (loading) {
+    return <div className="loading">加载中...</div>;
+  }
+
   return (
-    <div className="admin-page">
-      <div className="admin-container">
-        <div className="admin-header">
-          <h1>{id ? '编辑礼物' : '新建礼物'}</h1>
+    <div className="admin-container">
+      <div className="page-header">
+        <button 
+          className="back-button"
+          onClick={handleBack}
+          disabled={saving}
+        >
+          返回
+        </button>
+        <h1>{id ? '编辑礼物' : '新建礼物'}</h1>
+      </div>
+      
+      <div className="gift-form">
+        <div className="form-group">
+          <label>封面图片</label>
+          <ImageUploader
+            value={formData.coverImage}
+            onChange={(url) => handleFieldChange('coverImage', url)}
+            maxSize={2}
+            style={{ height: 300 }}
+          />
         </div>
 
-        <form className="gift-form" onSubmit={e => e.preventDefault()}>
-          <div className="form-group">
-            <label>封面图片</label>
-            <ImageUpload
-              images={formData.coverImage ? [formData.coverImage] : []}
-              onChange={handleImageChange}
-              maxCount={1}
-            />
-          </div>
+        <div className="form-group">
+          <label>名称</label>
+          <input 
+            type="text" 
+            placeholder="输入礼物名称"
+            value={formData.name}
+            onChange={e => handleFieldChange('name', e.target.value)}
+          />
+        </div>
 
-          <div className="form-group">
-            <label>名称</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="输入礼物名称"
-            />
-          </div>
+        <div className="form-group">
+          <label>价格</label>
+          <input 
+            type="number" 
+            placeholder="输入价格"
+            value={formData.price}
+            onChange={e => handleFieldChange('price', e.target.value)}
+          />
+        </div>
 
-          <div className="form-group">
-            <label>价格</label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              placeholder="输入价格"
-            />
-          </div>
-
-          <div className="modules-container">
-            {formData.modules.map((module, index) => (
-              <ContentModule
-                key={index}
-                module={module}
-                onUpdate={(updatedModule) => {
-                  const newModules = [...formData.modules];
-                  newModules[index] = updatedModule;
-                  setFormData(prev => ({ ...prev, modules: newModules }));
-                }}
-                onDelete={() => {
+        <div className="form-group">
+          <label>标签</label>
+          <div className="tag-group">
+            {mockTags.map(tag => (
+              <span 
+                key={tag.id}
+                className={`tag-item ${formData.tags.includes(tag.id) ? 'selected' : ''}`}
+                onClick={() => {
                   setFormData(prev => ({
                     ...prev,
-                    modules: prev.modules.filter((_, i) => i !== index)
+                    tags: prev.tags.includes(tag.id)
+                      ? prev.tags.filter(t => t !== tag.id)
+                      : [...prev.tags, tag.id]
                   }));
                 }}
-              />
+              >
+                {tag.name}
+              </span>
             ))}
-            <button
-              type="button"
-              className="add-module"
-              onClick={() => {
-                setFormData(prev => ({
-                  ...prev,
-                  modules: [...prev.modules, { title: '', content: '', images: [] }]
-                }));
-              }}
-            >
-              添加内容模块
-            </button>
           </div>
+        </div>
 
-          <div className="tags-group">
-            <h3>选择标签</h3>
-            {Object.entries(
-              mockTags.reduce((acc, tag) => {
-                if (!acc[tag.category]) acc[tag.category] = [];
-                acc[tag.category].push(tag);
-                return acc;
-              }, {})
-            ).map(([category, tags]) => (
-              <div key={category} className="tag-category">
-                <h4>{category}</h4>
-                <div className="tag-list">
-                  {tags.map(tag => (
-                    <button
-                      key={tag.id}
-                      type="button"
-                      className={`tag ${formData.tags?.some(t => t.id === tag.id) ? 'active' : ''}`}
-                      onClick={() => handleTagToggle(tag.id)}
+        <div className="form-group">
+          <label>内容模块</label>
+          <div className="modules-container">
+            {formData.modules.map((module, moduleIndex) => (
+              <div key={module.id} className="content-module">
+                <div className="module-header">
+                  <span>模块 {moduleIndex + 1}</span>
+                  <div className="module-actions">
+                    <button 
+                      onClick={() => handleMoveModule(moduleIndex, 'up')}
+                      disabled={moduleIndex === 0}
                     >
-                      {tag.name}
+                      上移
                     </button>
-                  ))}
+                    <button 
+                      onClick={() => handleMoveModule(moduleIndex, 'down')}
+                      disabled={moduleIndex === formData.modules.length - 1}
+                    >
+                      下移
+                    </button>
+                    <button onClick={() => handleRemoveModule(moduleIndex)}>删除</button>
+                  </div>
+                </div>
+
+                <div className="module-sections">
+                  {module.sections.map((section, sectionIndex) => {
+                    let sectionContent = null;
+                    
+                    if (section.type === 'title') {
+                      sectionContent = (
+                        <input
+                          type="text"
+                          placeholder="输入标题"
+                          value={section.content}
+                          onChange={e => handleSectionChange(moduleIndex, sectionIndex, e.target.value)}
+                        />
+                      );
+                    } else if (section.type === 'text') {
+                      sectionContent = (
+                        <textarea
+                          placeholder="输入内容"
+                          value={section.content}
+                          onChange={e => handleSectionChange(moduleIndex, sectionIndex, e.target.value)}
+                        />
+                      );
+                    } else if (section.type === 'image') {
+                      sectionContent = (
+                        <ImageUploader
+                          value={section.content}
+                          onChange={(url) => handleSectionChange(moduleIndex, sectionIndex, url)}
+                          maxSize={2}
+                        />
+                      );
+                    }
+
+                    return (
+                      <div key={sectionIndex} className="module-section">
+                        <div className="section-header">
+                          <span>{section.type === 'title' ? '标题' : 
+                                section.type === 'text' ? '文本' : '图片'}</span>
+                          <div className="section-actions">
+                            <button 
+                              onClick={() => handleMoveSectionUp(moduleIndex, sectionIndex)}
+                              disabled={sectionIndex === 0}
+                            >
+                              上移
+                            </button>
+                            <button 
+                              onClick={() => handleMoveSectionDown(moduleIndex, sectionIndex)}
+                              disabled={sectionIndex === module.sections.length - 1}
+                            >
+                              下移
+                            </button>
+                            <button onClick={() => handleRemoveSection(moduleIndex, sectionIndex)}>
+                              删除
+                            </button>
+                          </div>
+                        </div>
+                        {sectionContent}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="add-section-buttons">
+                  <button onClick={() => handleAddSection(moduleIndex, 'title')}>
+                    添加标题
+                  </button>
+                  <button onClick={() => handleAddSection(moduleIndex, 'text')}>
+                    添加文本
+                  </button>
+                  <button onClick={() => handleAddSection(moduleIndex, 'image')}>
+                    添加图片
+                  </button>
                 </div>
               </div>
             ))}
           </div>
+          
+          <button className="add-module" onClick={handleAddModule}>
+            添加内容模块
+          </button>
+        </div>
 
-          <div className="publish-options">
-            <div className="schedule-option">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  name="isScheduled"
-                  checked={formData.isScheduled}
-                  onChange={handleChange}
-                />
-                定时发布
-              </label>
-              {formData.isScheduled && (
-                <input
-                  type="datetime-local"
-                  name="publishTime"
-                  value={formData.publishTime}
-                  onChange={handleChange}
-                  min={new Date().toISOString().slice(0, 16)}
-                  step="1800"
-                />
-              )}
+        <div className="form-group">
+          <label>
+            <input 
+              type="checkbox"
+              checked={formData.isScheduled}
+              onChange={e => setFormData(prev => ({
+                ...prev,
+                isScheduled: e.target.checked,
+                publishAt: e.target.checked ? prev.publishAt : null
+              }))}
+            />
+            定时发布
+          </label>
+          {formData.isScheduled && (
+            <div className="schedule-publish">
+              <input
+                type="datetime-local"
+                value={formData.publishAt || ''}
+                onChange={e => setFormData(prev => ({
+                  ...prev,
+                  publishAt: e.target.value
+                }))}
+              />
             </div>
+          )}
+        </div>
 
-            <div className="form-actions">
-              <button
-                type="button"
-                className="draft-button"
-                onClick={() => handleSubmit('draft')}
-                disabled={loading}
-              >
-                保存草稿
-              </button>
-              <button
-                type="button"
-                className="publish-button"
-                onClick={() => handleSubmit('publish')}
-                disabled={loading}
-              >
-                {formData.isScheduled ? '定时发布' : '立即发布'}
-              </button>
-              {id && (
-                <button
-                  type="button"
-                  className="delete-button"
-                  onClick={() => {
-                    if (window.confirm('确定要删除这个礼物吗？')) {
-                      // TODO: 实现删除功能
-                      navigate('/admin/gifts');
-                    }
-                  }}
-                >
-                  删除
-                </button>
-              )}
-            </div>
-          </div>
-        </form>
+        <div className="action-buttons">
+          <button 
+            className="save-draft"
+            onClick={() => handlePublish('draft')}
+            disabled={saving}
+          >
+            保存草稿
+          </button>
+          <button 
+            className="publish-now"
+            onClick={() => handlePublish('published')}
+            disabled={saving}
+          >
+            {formData.isScheduled ? '定时发布' : '立即发布'}
+          </button>
+        </div>
       </div>
     </div>
   );

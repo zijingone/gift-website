@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const cloudinary = require('../config/cloudinary');
 
 /**
  * @desc    上传单个文件
@@ -29,16 +30,27 @@ exports.uploadFile = async (req, res, next) => {
       });
     }
 
-    // 生成文件URL
-    const fileUrl = `/uploads/${req.file.filename}`;
+    try {
+      // 上传到 Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'gift-website',
+        use_filename: true,
+        unique_filename: true
+      });
 
-    res.status(200).json({
-      success: true,
-      data: {
-        fileName: req.file.filename,
-        fileUrl
-      }
-    });
+      // 删除本地临时文件
+      fs.unlinkSync(req.file.path);
+
+      res.status(200).json({
+        success: true,
+        url: result.secure_url,
+        fileName: result.original_filename
+      });
+    } catch (uploadError) {
+      // 删除本地临时文件
+      fs.unlinkSync(req.file.path);
+      throw uploadError;
+    }
   } catch (err) {
     next(err);
   }
@@ -63,7 +75,7 @@ exports.uploadMultipleFiles = async (req, res, next) => {
     const errors = [];
 
     // 处理每个文件
-    req.files.forEach(file => {
+    for (const file of req.files) {
       const mimeType = fileTypes.test(file.mimetype);
       const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
 
@@ -72,14 +84,28 @@ exports.uploadMultipleFiles = async (req, res, next) => {
         fs.unlinkSync(file.path);
         errors.push(`文件 ${file.originalname} 格式不支持`);
       } else {
-        uploadedFiles.push({
-          fileName: file.filename,
-          fileUrl: `/uploads/${file.filename}`
-        });
-      }
-    });
+        try {
+          // 上传到 Cloudinary
+          const result = await cloudinary.uploader.upload(file.path, {
+            folder: 'gift-website',
+            use_filename: true,
+            unique_filename: true
+          });
 
-    if (errors.length > 0) {
+          uploadedFiles.push({
+            fileName: result.original_filename,
+            url: result.secure_url
+          });
+        } catch (uploadError) {
+          errors.push(`文件 ${file.originalname} 上传失败: ${uploadError.message}`);
+        } finally {
+          // 删除本地临时文件
+          fs.unlinkSync(file.path);
+        }
+      }
+    }
+
+    if (errors.length > 0 && uploadedFiles.length === 0) {
       return res.status(400).json({
         success: false,
         errors
@@ -88,7 +114,9 @@ exports.uploadMultipleFiles = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      data: uploadedFiles
+      urls: uploadedFiles.map(file => file.url),
+      fileNames: uploadedFiles.map(file => file.fileName),
+      errors: errors.length > 0 ? errors : undefined
     });
   } catch (err) {
     next(err);

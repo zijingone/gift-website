@@ -1,151 +1,174 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { mockApi } from '../../mockData';
+import Toast from '../../components/Toast';
+import '../../styles/admin.css';
 
 /**
- * 管理后台礼物列表组件
+ * 礼物管理列表页面
  * @component
- * @description 展示所有礼物的列表，支持按状态筛选（全部、已发布、草稿、定时发布），
- * 提供新建、编辑、预览等功能
- * @returns {JSX.Element} 礼物列表管理界面
  */
-function AdminGiftList() {
-  const [gifts, setGifts] = useState([]);
-  const [filter, setFilter] = useState('all'); // 'all', 'published', 'draft', 'scheduled'
+const GiftList = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [gifts, setGifts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentStatus, setCurrentStatus] = useState('all');
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [toast, setToast] = useState(null);
+
+  // 处理路由状态中的消息
+  useEffect(() => {
+    if (location.state?.message) {
+      setToast({
+        message: location.state.message,
+        type: location.state.type || 'info'
+      });
+      // 清除路由状态
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate]);
 
   useEffect(() => {
-    loadGifts();
-  }, [filter]);
+    const fetchGifts = async () => {
+      try {
+        console.log('开始获取礼物列表...');
+        setLoading(true);
+        
+        // 获取所有礼物
+        const data = await mockApi.getGifts({ keyword: searchKeyword });
+        console.log('获取到的礼物:', data);
+        
+        // 在前端进行状态过滤
+        let filteredGifts = Array.isArray(data) ? data : [];
+        
+        if (currentStatus !== 'all') {
+          filteredGifts = filteredGifts.filter(gift => {
+            if (currentStatus === 'scheduled') {
+              return gift.status === 'scheduled';
+            } else if (currentStatus === 'published') {
+              return gift.status === 'published';
+            } else if (currentStatus === 'draft') {
+              return gift.status === 'draft';
+            }
+            return true;
+          });
+        }
+        
+        setGifts(filteredGifts);
+      } catch (error) {
+        console.error('获取礼物列表失败:', error);
+        setGifts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  /**
-   * 加载礼物列表数据
-   * @async
-   * @function
-   * @description 根据当前筛选条件加载礼物列表
-   */
-  const loadGifts = async () => {
-    try {
-      const params = filter !== 'all' ? { status: filter } : {};
-      const data = await mockApi.getGifts(params);
-      setGifts(data);
-    } catch (error) {
-      console.error('加载礼物列表失败:', error);
-    }
+    fetchGifts();
+  }, [currentStatus, searchKeyword]);
+
+  const handleEdit = (id) => {
+    navigate(`/admin/gifts/${id}`);
   };
 
-  /**
-   * 获取状态显示文本
-   * @function
-   * @param {string} status - 礼物状态
-   * @returns {string} 状态的中文显示文本
-   */
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'published': return '已发布';
-      case 'draft': return '草稿';
-      case 'scheduled': return '定时发布';
-      default: return '未知';
-    }
-  };
-
-  /**
-   * 获取状态对应的 CSS 类名
-   * @function
-   * @param {string} status - 礼物状态
-   * @returns {string} 对应的 CSS 类名
-   */
-  const getStatusClass = (status) => {
-    switch (status) {
-      case 'published': return 'status-published';
-      case 'draft': return 'status-draft';
-      case 'scheduled': return 'status-scheduled';
-      default: return '';
-    }
+  const handlePreview = (id) => {
+    navigate(`/gifts/${id}`);
   };
 
   return (
-    <div className="admin-page">
-      <div className="admin-container">
-        <div className="admin-header">
-          <h1>礼物管理</h1>
+    <div className="admin-container">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      
+      <h1>礼物管理</h1>
+      
+      <div className="admin-header">
+        <div className="filter-tabs">
           <button 
-            className="add-gift-button"
-            onClick={() => navigate('/admin/gifts/new')}
-          >
-            新建礼物
-          </button>
-        </div>
-
-        <div className="filter-bar">
-          <button 
-            className={`filter-button ${filter === 'all' ? 'active' : ''}`}
-            onClick={() => setFilter('all')}
+            className={`filter-tab ${currentStatus === 'all' ? 'active' : ''}`}
+            onClick={() => setCurrentStatus('all')}
           >
             全部
           </button>
           <button 
-            className={`filter-button ${filter === 'published' ? 'active' : ''}`}
-            onClick={() => setFilter('published')}
+            className={`filter-tab ${currentStatus === 'published' ? 'active' : ''}`}
+            onClick={() => setCurrentStatus('published')}
           >
             已发布
           </button>
           <button 
-            className={`filter-button ${filter === 'draft' ? 'active' : ''}`}
-            onClick={() => setFilter('draft')}
+            className={`filter-tab ${currentStatus === 'draft' ? 'active' : ''}`}
+            onClick={() => setCurrentStatus('draft')}
           >
             草稿
           </button>
           <button 
-            className={`filter-button ${filter === 'scheduled' ? 'active' : ''}`}
-            onClick={() => setFilter('scheduled')}
+            className={`filter-tab ${currentStatus === 'scheduled' ? 'active' : ''}`}
+            onClick={() => setCurrentStatus('scheduled')}
           >
             定时发布
           </button>
         </div>
 
-        <table className="gift-table">
-          <thead>
-            <tr>
-              <th>名称</th>
-              <th>价格</th>
-              <th>状态</th>
-              <th>发布时间</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {gifts.map(gift => (
-              <tr key={gift.id}>
-                <td>{gift.name}</td>
-                <td>¥{gift.price}</td>
-                <td>
-                  <span className={`status-badge ${getStatusClass(gift.status)}`}>
-                    {getStatusText(gift.status)}
-                  </span>
-                </td>
-                <td>{gift.publishTime || '-'}</td>
-                <td>
-                  <button 
-                    className="edit-button"
-                    onClick={() => navigate(`/admin/gifts/${gift.id}/edit`)}
-                  >
-                    编辑
-                  </button>
-                  <button 
-                    className="preview-button"
-                    onClick={() => navigate(`/gifts/${gift.id}`)}
-                  >
-                    预览
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <button className="add-gift-button" onClick={() => navigate('/admin/gifts/new')}>
+          新建礼物
+        </button>
       </div>
+
+      {loading ? (
+        <div className="loading">加载中...</div>
+      ) : (
+        <div className="gift-table">
+          <div className="gift-table-header">
+            <div className="gift-table-cell">图片</div>
+            <div className="gift-table-cell">名称</div>
+            <div className="gift-table-cell">价格</div>
+            <div className="gift-table-cell">状态</div>
+            <div className="gift-table-cell">发布时间</div>
+            <div className="gift-table-cell">操作</div>
+          </div>
+
+          {gifts.map((gift) => (
+            <div key={gift.id} className="gift-table-row">
+              <div className="gift-table-cell">
+                {gift.coverImage ? (
+                  <img src={gift.coverImage} alt={gift.name} />
+                ) : (
+                  <div className="no-image">无图片</div>
+                )}
+              </div>
+              <div className="gift-table-cell">{gift.name || '无标题'}</div>
+              <div className="gift-table-cell">¥{gift.price}</div>
+              <div className="gift-table-cell">
+                <span className={`status-tag ${gift.status}`}>
+                  {gift.status === 'published' ? '已发布' : 
+                   gift.status === 'draft' ? '草稿' : 
+                   gift.status === 'scheduled' ? '定时发布' : '-'}
+                </span>
+              </div>
+              <div className="gift-table-cell">
+                {gift.status === 'scheduled' && gift.publishAt 
+                  ? new Date(gift.publishAt).toLocaleString() 
+                  : gift.status === 'published' 
+                    ? new Date(gift.publishAt || Date.now()).toLocaleString()
+                    : '-'
+                }
+              </div>
+              <div className="gift-table-cell">
+                <span className="action-link" onClick={() => handleEdit(gift.id)}>编辑</span>
+                <span className="action-link" onClick={() => handlePreview(gift.id)}>预览</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
-}
+};
 
-export default AdminGiftList; 
+export default GiftList; 

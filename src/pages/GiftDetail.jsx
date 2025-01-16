@@ -1,35 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { mockApi } from '../mockData';
-import GiftCard from '../components/GiftCard';
 
-/**
- * 礼物详情页面
- * @returns {JSX.Element} 礼物详情页面
- */
 const GiftDetail = () => {
-  const [gift, setGift] = useState(null);
-  const [relatedGifts, setRelatedGifts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const { id } = useParams();
-  const navigate = useNavigate();
+  const [gift, setGift] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchGiftDetails = async () => {
+    const loadGift = async () => {
       try {
-        setLoading(true);
-        const giftData = await mockApi.getGiftById(id);
-        const relatedData = await mockApi.getRelatedGifts(id);
-        setGift(giftData);
-        setRelatedGifts(relatedData);
+        const data = await mockApi.getGiftById(id);
+        setGift(data);
       } catch (error) {
-        console.error('获取礼物详情失败:', error);
+        console.error('加载礼物详情失败:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchGiftDetails();
+    loadGift();
   }, [id]);
 
   if (loading) {
@@ -37,37 +27,69 @@ const GiftDetail = () => {
   }
 
   if (!gift) {
-    return <div className="error">未找到该礼物</div>;
+    return <div className="error">礼物不存在</div>;
   }
 
   return (
     <div className="gift-detail">
-      <div className="gift-detail__main">
-        <img src={gift.image} alt={gift.name} className="gift-detail__image" />
-        <div className="gift-detail__content">
-          <h1 className="gift-detail__title">{gift.name}</h1>
-          <div className="gift-detail__price">¥{gift.price}</div>
-          <div className="gift-detail__tags">
-            {gift.tags.map(tag => (
-              <span key={tag.id} className="tag">{tag.name}</span>
-            ))}
-          </div>
-          <p className="gift-detail__description">{gift.description}</p>
-        </div>
+      <div className="gift-detail__header">
+        <h1>{gift.name}</h1>
+        <div className="gift-detail__price">¥{gift.price}</div>
       </div>
 
-      {relatedGifts.length > 0 && (
-        <div className="gift-detail__related">
-          <h2>相关推荐</h2>
-          <div className="gift-list">
-            {relatedGifts.map(relatedGift => (
-              <GiftCard
-                key={relatedGift.id}
-                {...relatedGift}
-                onClick={() => navigate(`/gifts/${relatedGift.id}`)}
-              />
-            ))}
-          </div>
+      <div className="gift-detail__image">
+        {gift.coverImage && <img src={gift.coverImage} alt={gift.name} />}
+      </div>
+
+      {gift.tags && gift.tags.length > 0 && (
+        <div className="gift-detail__tags">
+          {gift.tags.map(tag => (
+            <span key={tag} className="tag">{tag}</span>
+          ))}
+        </div>
+      )}
+
+      {gift.description && (
+        <div className="gift-detail__description">
+          {gift.description.split('\n').map((paragraph, index) => (
+            <p key={index}>{paragraph}</p>
+          ))}
+        </div>
+      )}
+
+      {gift.background && (
+        <div className="gift-detail__background">
+          <h3>背景故事</h3>
+          {gift.background.split('\n').map((paragraph, index) => (
+            <p key={index}>{paragraph}</p>
+          ))}
+        </div>
+      )}
+
+      {gift.features && (
+        <div className="gift-detail__features">
+          <h3>产品特点</h3>
+          {gift.features.split('\n').map((paragraph, index) => (
+            <p key={index}>{paragraph}</p>
+          ))}
+        </div>
+      )}
+
+      {gift.modules && gift.modules.length > 0 && (
+        <div className="gift-detail__modules">
+          {gift.modules.map((module, index) => (
+            <div key={index} className="content-module">
+              {module.sections.map((section, sectionIndex) => (
+                <div key={sectionIndex} className="module-section">
+                  {section.type === 'title' && <h3>{section.content}</h3>}
+                  {section.type === 'text' && <p>{section.content}</p>}
+                  {section.type === 'image' && section.content && (
+                    <img src={section.content} alt={`内容图片 ${sectionIndex + 1}`} />
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
       )}
     </div>

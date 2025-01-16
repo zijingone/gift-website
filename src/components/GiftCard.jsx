@@ -10,7 +10,7 @@ import PropTypes from 'prop-types'
  * @param {Object} props - 组件属性
  * @param {string} props.name - 礼物名称
  * @param {number} props.price - 礼物价格（单位：元）
- * @param {string} props.image - 礼物图片的 URL 地址
+ * @param {string} props.coverImage - 礼物封面图片的 URL 地址
  * @param {Array<{id: string, name: string}>} props.tags - 标签列表
  * @param {Function} props.onClick - 点击卡片时的回调函数，通常用于导航到礼物详情页
  * 
@@ -19,7 +19,7 @@ import PropTypes from 'prop-types'
  * <GiftCard
  *   name="生日蛋糕"
  *   price={199}
- *   image="cake.jpg"
+ *   coverImage="cake.jpg"
  *   tags={[
  *     { id: "1", name: "生日" },
  *     { id: "2", name: "甜点" }
@@ -30,15 +30,15 @@ import PropTypes from 'prop-types'
  * 
  * @returns {JSX.Element} 礼物卡片组件
  */
-const GiftCard = ({ name, price, image, tags, onClick }) => {
+const GiftCard = ({ name, price, coverImage, tags, onClick }) => {
   return (
     <div className="gift-card" onClick={onClick}>
-      <img src={image} alt={name} />
+      <img src={coverImage} alt={name} className="gift-card__image" />
       <div className="gift-card__content">
         <h3 className="gift-card__title">{name}</h3>
         <div className="gift-card__price">¥{price}</div>
         <div className="gift-card__tags">
-          {tags.map(tag => (
+          {tags?.map(tag => (
             <span key={tag.id} className="tag">{tag.name}</span>
           ))}
         </div>
@@ -50,13 +50,13 @@ const GiftCard = ({ name, price, image, tags, onClick }) => {
 GiftCard.propTypes = {
   name: PropTypes.string.isRequired,
   price: PropTypes.number.isRequired,
-  image: PropTypes.string.isRequired,
+  coverImage: PropTypes.string.isRequired,
   tags: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.string.isRequired,
       name: PropTypes.string.isRequired,
     })
-  ).isRequired,
+  ),
   onClick: PropTypes.func.isRequired,
 }
 

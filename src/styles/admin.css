@@ -1,0 +1,664 @@
+.admin-container {
+  padding: 24px;
+  background: var(--background-dark);
+  min-height: 100vh;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.admin-container h1 {
+  font-size: 20px;
+  margin-bottom: 24px;
+  color: var(--text-color);
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.add-gift-button {
+  padding: 8px 16px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-tab {
+  padding: 6px 12px;
+  background: var(--background-card);
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.filter-tab:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+.filter-tab.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+.gift-table {
+  background: var(--background-card);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.gift-table-header {
+  display: grid;
+  grid-template-columns: 60px 2fr 1fr 1fr 1.2fr 100px;
+  padding: 12px 24px;
+  background: var(--background-dark);
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+.gift-table-row {
+  display: grid;
+  grid-template-columns: 60px 2fr 1fr 1fr 1.2fr 100px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border-color);
+  align-items: center;
+  font-size: 14px;
+}
+
+.gift-table-row:last-child {
+  border-bottom: none;
+}
+
+.gift-table-cell {
+  display: flex;
+  align-items: center;
+}
+
+.gift-table-cell img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.no-image {
+  width: 40px;
+  height: 40px;
+  background: var(--background-dark);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+.status-tag {
+  font-size: 14px;
+}
+
+.status-tag.published {
+  color: var(--primary-color);
+}
+
+.status-tag.draft {
+  color: var(--text-light);
+}
+
+.status-tag.scheduled {
+  color: #3B82F6;
+}
+
+.action-cell {
+  display: flex;
+  gap: 8px;
+}
+
+.action-link {
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 4px;
+}
+
+.action-link:first-child {
+  color: #3B82F6;
+}
+
+.action-link:last-child {
+  color: var(--primary-color);
+}
+
+.loading {
+  text-align: center;
+  padding: 48px;
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+/* 新建礼物页面样式 */
+.gift-form {
+  max-width: 800px;
+  margin: 0 auto;
+  background: var(--background-card);
+  padding: 24px;
+  border-radius: 8px;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--background-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.form-group input[type="text"]::placeholder,
+.form-group input[type="number"]::placeholder {
+  color: var(--text-light);
+}
+
+/* 封面图片上传区域 */
+.cover-upload-area {
+  border: 2px dashed var(--border-color);
+  border-radius: 4px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--background-dark);
+}
+
+.upload-placeholder {
+  color: var(--text-light);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.image-preview {
+  position: relative;
+  display: inline-block;
+}
+
+.image-preview img {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 4px;
+}
+
+.image-preview button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/* 标签样式 */
+.tag-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.tag-item {
+  padding: 4px 8px;
+  background: var(--background-dark);
+  border-radius: 4px;
+  color: var(--text-light);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.tag-item:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+.tag-item.selected {
+  background: var(--primary-color);
+  color: white;
+}
+
+/* 内容模块样式 */
+.content-module {
+  margin-bottom: 24px;
+  background: var(--background-dark);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.module-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.module-header span {
+  color: var(--text-color);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.module-actions,
+.section-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.module-actions button,
+.section-actions button {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-light);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.module-actions button:hover,
+.section-actions button:hover {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.module-actions button:disabled,
+.section-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 模块内容区域 */
+.module-sections {
+  padding: 16px;
+}
+
+.module-section {
+  margin-bottom: 16px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.section-header span {
+  color: var(--text-light);
+  font-size: 12px;
+}
+
+.section-content {
+  padding: 12px;
+}
+
+/* 添加部分按钮 */
+.add-section-buttons {
+  display: flex;
+  gap: 8px;
+  padding: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.add-section-buttons button {
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-light);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.add-section-buttons button:hover {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+/* 添加模块按钮 */
+.add-module {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 16px;
+  background: transparent;
+  border: 2px dashed var(--border-color);
+  border-radius: 4px;
+  color: var(--text-light);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.add-module:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* 定时发布 */
+.schedule-publish {
+  margin-top: 8px;
+}
+
+.schedule-publish input[type="datetime-local"] {
+  padding: 6px 8px;
+  background: var(--background-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+/* 底部按钮 */
+.action-buttons {
+  display: flex;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.save-draft,
+.publish-now {
+  padding: 8px 24px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.save-draft {
+  background: var(--background-dark);
+  color: var(--text-light);
+}
+
+.save-draft:hover {
+  background: var(--border-color);
+}
+
+.publish-now {
+  background: var(--primary-color);
+  color: white;
+}
+
+.publish-now:hover {
+  opacity: 0.9;
+}
+
+.save-draft:disabled,
+.publish-now:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 内容模块图片上传区域 */
+.section-image-upload {
+  border: 2px dashed var(--border-color);
+  border-radius: 4px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--background-dark);
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.back-button {
+  padding: 0.5rem 1rem;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background-color: #e5e5e5;
+}
+
+.back-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.image-upload {
+  margin-bottom: 20px;
+}
+
+.image-upload .upload-area {
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.image-upload .upload-area.dragging {
+  border-color: #1890ff;
+  background-color: rgba(24, 144, 255, 0.05);
+}
+
+.image-upload .upload-hint {
+  color: #666;
+}
+
+.image-upload .upload-hint span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.image-upload .upload-hint small {
+  color: #999;
+  font-size: 12px;
+}
+
+.image-upload .image-preview {
+  position: relative;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.image-upload .image-preview img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.image-upload .image-preview .remove-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.image-upload .image-preview .remove-button:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.image-upload .error-message {
+  color: #ff4d4f;
+  font-size: 12px;
+  margin-top: 8px;
+  text-align: center;
+  background: rgba(255, 77, 79, 0.1);
+  padding: 4px;
+  border-radius: 4px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 多图布局样式 */
+.image-upload.double-layout .image-preview,
+.image-upload.triple-layout .image-preview {
+  display: inline-block;
+  vertical-align: top;
+  margin-right: 10px;
+}
+
+.image-upload.double-layout .image-preview {
+  width: calc(50% - 5px);
+}
+
+.image-upload.double-layout .image-preview:nth-child(2n) {
+  margin-right: 0;
+}
+
+.image-upload.triple-layout .image-preview {
+  width: calc(33.33% - 7px);
+}
+
+.image-upload.triple-layout .image-preview:nth-child(3n) {
+  margin-right: 0;
+}
+
+/* 登录页面样式 */
+.login-form {
+  max-width: 400px;
+  margin: 100px auto;
+  padding: 24px;
+  background: var(--background-card);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.login-form h1 {
+  text-align: center;
+  margin-bottom: 24px;
+  color: var(--text-color);
+}
+
+.login-form .error-message {
+  color: #ff4d4f;
+  font-size: 14px;
+  margin-bottom: 16px;
+  padding: 8px;
+  background: rgba(255, 77, 79, 0.1);
+  border-radius: 4px;
+  text-align: center;
+}
+
+.login-form .form-group {
+  margin-bottom: 16px;
+}
+
+.login-form label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-color);
+}
+
+.login-form input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--background-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.login-form input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+.login-button {
+  width: 100%;
+  padding: 10px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.login-button:hover {
+  opacity: 0.9;
+}
+
+.login-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+} 

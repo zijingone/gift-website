@@ -15,6 +15,7 @@ import PropTypes from 'prop-types';
  */
 const ImageUpload = ({ images = [], onChange, maxCount = 1, layout = 'single' }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState('');
   const fileInputRef = useRef(null);
 
   /**
@@ -76,7 +77,7 @@ const ImageUpload = ({ images = [], onChange, maxCount = 1, layout = 'single' })
   const uploadFiles = async (files) => {
     // 检查文件数量限制
     if (images.length + files.length > maxCount) {
-      alert(`最多只能上传 ${maxCount} 张图片`);
+      setError(`最多只能上传 ${maxCount} 张图片`);
       return;
     }
 
@@ -86,40 +87,61 @@ const ImageUpload = ({ images = [], onChange, maxCount = 1, layout = 'single' })
     );
 
     if (validFiles.length !== files.length) {
-      alert('只支持 jpg、jpeg、png、gif 格式的图片');
+      setError('只支持 jpg、jpeg、png、gif 格式的图片');
       return;
     }
 
     try {
+      // 从 localStorage 获取 token
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('未登录或登录已过期');
+        return;
+      }
+
       const formData = new FormData();
       if (maxCount === 1) {
         formData.append('file', validFiles[0]);
-        const response = await fetch('http://localhost:5000/api/upload', {
+        const response = await fetch('http://localhost:5001/api/upload', {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
           body: formData
         });
         const result = await response.json();
         if (result.success) {
-          onChange([result.data.fileUrl]);
+          const fileUrl = result.data?.fileUrl || result.url;
+          if (!fileUrl) {
+            throw new Error('上传成功但未获取到文件 URL');
+          }
+          onChange([fileUrl]);
         } else {
-          alert(result.error || '上传失败');
+          setError(result.error || result.errors?.join('\n') || '上传失败');
         }
       } else {
         validFiles.forEach(file => formData.append('files', file));
-        const response = await fetch('http://localhost:5000/api/upload/multiple', {
+        const response = await fetch('http://localhost:5001/api/upload/multiple', {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
           body: formData
         });
         const result = await response.json();
         if (result.success) {
-          onChange([...images, ...result.data.map(file => file.fileUrl)]);
+          const fileUrls = result.data?.map(file => file.fileUrl) || result.urls;
+          if (!fileUrls || fileUrls.length === 0) {
+            throw new Error('上传成功但未获取到文件 URL');
+          }
+          onChange([...images, ...fileUrls]);
         } else {
-          alert(result.errors?.join('\n') || '上传失败');
+          setError(result.error || result.errors?.join('\n') || '上传失败');
         }
       }
     } catch (error) {
       console.error('上传失败:', error);
-      alert('上传失败,请重试');
+      setError('上传失败,请重试');
     }
   };
 
@@ -172,6 +194,8 @@ const ImageUpload = ({ images = [], onChange, maxCount = 1, layout = 'single' })
           </div>
         </div>
       )}
+
+      {error && <div className="error-message">{error}</div>}
     </div>
   );
 };
