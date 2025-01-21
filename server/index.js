@@ -1,29 +1,29 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-
-// 加载环境变量
-dotenv.config();
+const path = require('path');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
 // 中间件
 app.use(cors());
 app.use(express.json());
 
-// 连接数据库
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('Could not connect to MongoDB:', err));
+// 服务静态文件
+app.use(express.static(path.join(__dirname, '../dist')));
 
-// 基础路由
-app.get('/', (req, res) => {
-  res.json({ message: 'Gift Website API is running' });
+// API 路由
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: '服务器运行正常' });
+});
+
+// 所有其他请求返回 index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 // 启动服务器
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`服务器运行在端口 ${PORT}`);
 }); 
