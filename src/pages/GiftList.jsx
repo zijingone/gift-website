@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import GiftCard from '../components/GiftCard';
-import { mockApi, mockTags } from '../mockData';
+import api from '../utils/api';
 import '../styles/main.css';
 
 /**
@@ -30,7 +30,7 @@ const GiftList = () => {
     const fetchTags = async () => {
       try {
         console.log('开始获取标签列表...');
-        const data = await mockApi.getTags();
+        const data = await api.get('/api/tags');
         console.log('获取到的标签列表:', data);
         setTags(data);
       } catch (error) {
@@ -52,14 +52,16 @@ const GiftList = () => {
         console.log('当前筛选条件:', { selectedTags, searchKeyword });
         
         setLoading(true);
-        const params = {
-          tags: selectedTags,
-          keyword: searchKeyword || undefined,
-          status: undefined
-        };
+        const params = new URLSearchParams();
+        if (selectedTags.length > 0) {
+          params.append('tags', selectedTags.join(','));
+        }
+        if (searchKeyword) {
+          params.append('keyword', searchKeyword);
+        }
 
-        console.log('请求参数:', params);
-        const data = await mockApi.getGifts(params);
+        console.log('请求参数:', params.toString());
+        const data = await api.get(`/api/gifts?${params.toString()}`);
         console.log('获取到的礼物列表:', data);
         
         if (Array.isArray(data)) {
