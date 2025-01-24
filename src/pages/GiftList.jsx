@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import GiftCard from '../components/GiftCard';
-import api from '../utils/api';
+import api from '@/utils/api';
 import '../styles/main.css';
 
 /**
