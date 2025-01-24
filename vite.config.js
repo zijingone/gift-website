@@ -5,20 +5,11 @@ import path from 'path';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/',
-  server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true
-      }
-    }
-  },
+  base: './',
   build: {
     outDir: 'dist',
-    assetsDir: 'assets',
     emptyOutDir: true,
+    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: undefined
@@ -28,6 +19,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src')
+    }
+  },
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': 'http://localhost:3000'
     }
   }
 }); 
