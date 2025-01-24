@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider, createRoutesFromElements, Route, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import App from './App';
 import GiftList from './pages/GiftList';
 import GiftDetail from './pages/GiftDetail';
@@ -21,48 +21,59 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-const router = createBrowserRouter(
-  createRoutesFromElements(
-    <Route path="/" element={<App />}>
-      <Route index element={<Navigate to="/gifts" replace />} />
-      <Route path="gifts" element={<GiftList />} />
-      <Route path="gifts/:id" element={<GiftDetail />} />
-      <Route path="admin">
-        <Route path="login" element={<Login />} />
-        <Route 
-          path="gifts" 
-          element={
-            <ProtectedRoute>
-              <AdminGiftList />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="gifts/new" 
-          element={
-            <ProtectedRoute>
-              <GiftEditor />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="gifts/:id" 
-          element={
-            <ProtectedRoute>
-              <GiftEditor />
-            </ProtectedRoute>
-          } 
-        />
-      </Route>
-    </Route>
-  ),
+const router = createBrowserRouter([
   {
-    future: {
-      v7_startTransition: true,
-      v7_relativeSplatPath: true
-    }
+    path: '/',
+    element: <App />,
+    children: [
+      {
+        index: true,
+        element: <GiftList />
+      },
+      {
+        path: 'gifts',
+        element: <GiftList />
+      },
+      {
+        path: 'gifts/:id',
+        element: <GiftDetail />
+      },
+      {
+        path: 'admin',
+        children: [
+          {
+            path: 'login',
+            element: <Login />
+          },
+          {
+            path: 'gifts',
+            element: (
+              <ProtectedRoute>
+                <AdminGiftList />
+              </ProtectedRoute>
+            )
+          },
+          {
+            path: 'gifts/new',
+            element: (
+              <ProtectedRoute>
+                <GiftEditor />
+              </ProtectedRoute>
+            )
+          },
+          {
+            path: 'gifts/:id',
+            element: (
+              <ProtectedRoute>
+                <GiftEditor />
+              </ProtectedRoute>
+            )
+          }
+        ]
+      }
+    ]
   }
-);
+]);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
