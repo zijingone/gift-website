@@ -18,22 +18,22 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
+// 服务静态文件
+app.use(express.static(path.join(__dirname, '../dist')));
+
 // API 路由
 app.use('/api/auth', authRoutes);
 app.use('/api/gifts', giftRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/tags', tagRoutes);
 
-// 服务静态文件
-app.use(express.static(path.join(__dirname, '../dist')));
-
-// API 路由
+// 健康检查
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: '服务器运行正常' });
 });
 
-// 所有其他请求返回 index.html
-app.get('*', (req, res) => {
+// 所有非 API 请求返回 index.html
+app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
