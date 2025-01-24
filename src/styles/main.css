@@ -418,4 +418,62 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 300px;
+}
+
+/* 管理后台布局 */
+.admin-layout {
+  min-height: 100vh;
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+}
+
+.admin-header .logo {
+  color: white;
+  font-size: 18px;
+  margin-right: 24px;
+}
+
+.admin-content {
+  padding: 24px;
+  background: #f0f2f5;
+}
+
+/* 标签管理页面 */
+.tag-manager {
+  background: white;
+  padding: 24px;
+  border-radius: 4px;
+}
+
+.tag-manager-header {
+  margin-bottom: 16px;
+}
+
+.tag-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.tag-card {
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  padding: 16px;
+}
+
+.tag-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.tag-card-category {
+  color: #666;
+  font-size: 14px;
 } 

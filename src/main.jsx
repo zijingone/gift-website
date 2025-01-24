@@ -10,6 +10,7 @@ import GiftDetail from './pages/GiftDetail';
 import AdminGiftList from './pages/admin/GiftList';
 import GiftEditor from './pages/admin/GiftEditor';
 import Login from './pages/admin/Login';
+import TagManager from './pages/admin/TagManager';
 import './styles/main.css';
 
 // 权限控制组件
@@ -66,6 +67,14 @@ const router = createBrowserRouter([
             element: (
               <ProtectedRoute>
                 <GiftEditor />
+              </ProtectedRoute>
+            )
+          },
+          {
+            path: 'tags',
+            element: (
+              <ProtectedRoute>
+                <TagManager />
               </ProtectedRoute>
             )
           }
