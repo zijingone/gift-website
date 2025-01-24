@@ -376,4 +376,46 @@ body {
   .gift-detail-modal__body h3 {
     font-size: 20px;
   }
+}
+
+.gift-list-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.search-section {
+  margin-bottom: 24px;
+}
+
+.gift-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.gift-card {
+  height: 100%;
+}
+
+.gift-card .ant-card-cover {
+  height: 200px;
+  overflow: hidden;
+}
+
+.gift-card .ant-card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gift-tags {
+  margin-top: 12px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
 } 
