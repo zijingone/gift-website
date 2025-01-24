@@ -16,7 +16,8 @@
     "preview": "vite preview",
     "lint": "eslint . --ext .js,.jsx --fix",
     "test": "vitest",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "init-data": "node server/scripts/initGifts.js"
   },
   "dependencies": {
     "@ant-design/icons": "^5.2.6",
