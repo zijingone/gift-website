@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import GiftCard from '../components/GiftCard';
-import axios from 'axios';
+import api from '../utils/api';
 import '../styles/main.css';
 
 /**
@@ -30,9 +30,9 @@ const GiftList = () => {
     const fetchTags = async () => {
       try {
         console.log('开始获取标签列表...');
-        const response = await axios.get('/api/tags');
-        console.log('获取到的标签列表:', response.data);
-        setTags(response.data);
+        const data = await api.get('/api/tags');
+        console.log('获取到的标签列表:', data);
+        setTags(data);
       } catch (error) {
         console.error('获取标签列表失败:', error);
       }
@@ -59,8 +59,7 @@ const GiftList = () => {
         };
 
         console.log('请求参数:', params);
-        const response = await axios.get('/api/gifts', { params });
-        const data = response.data;
+        const data = await api.get('/api/gifts', { params });
         console.log('获取到的礼物列表:', data);
         
         if (Array.isArray(data)) {
@@ -142,24 +141,16 @@ const GiftList = () => {
    * @returns {string} 分类中文名
    */
   const getCategoryName = (category) => {
-    switch (category) {
-      case 'MBTI':
-        return 'MBTI类型';
-      case '星座':
-        return '星座';
-      case '节日':
-        return '节日';
-      case '生日':
-        return '生日';
-      case '纪念日':
-        return '纪念日';
-      case '礼物':
-        return '礼物';
-      case '标签':
-        return '标签';
-      default:
-        return category;
-    }
+    const categoryMap = {
+      'MBTI': 'MBTI类型',
+      'gender': '性别',
+      'age': '年龄段',
+      'relationship': '关系',
+      'price': '价格区间',
+      'giftCategory': '礼物类型',
+      'zodiac': '星座'
+    };
+    return categoryMap[category] || category;
   };
 
   return (
@@ -211,9 +202,10 @@ const GiftList = () => {
           <div className="gift-list">
             {gifts.map((gift) => (
               <GiftCard
-                key={`gift-${gift._id}`}
+                key={gift._id}
                 {...gift}
                 onClick={() => handleGiftClick(gift._id)}
+                expanded={expandedGiftId === gift._id}
               />
             ))}
           </div>
