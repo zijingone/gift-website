@@ -1,0 +1,27 @@
+{
+  "version": "2.0",
+  "envId": "{{envId}}",
+  "framework": {
+    "name": "gift-website",
+    "plugins": {
+      "client": {
+        "use": "@cloudbase/framework-plugin-website",
+        "inputs": {
+          "buildCommand": "npm run build",
+          "outputPath": "dist",
+          "installCommand": "npm install",
+          "cloudPath": "/",
+          "ignore": [".git", ".github", "node_modules", "cloudbaserc.js"],
+          "envVariables": {},
+          "rewrite": [
+            {
+              "from": "/*",
+              "to": "/index.html",
+              "status": 200
+            }
+          ]
+        }
+      }
+    }
+  }
+} 
