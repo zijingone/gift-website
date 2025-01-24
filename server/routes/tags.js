@@ -10,10 +10,17 @@ const auth = require('../middleware/auth');
  */
 router.get('/', async (req, res) => {
   try {
+    console.log('开始获取标签列表');
     const tags = await Tag.find().sort({ category: 1, name: 1 });
+    console.log(`成功获取 ${tags.length} 个标签`);
     res.json(tags);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('获取标签列表失败:', error);
+    console.error('错误堆栈:', error.stack);
+    res.status(500).json({ 
+      message: '获取标签列表失败',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
