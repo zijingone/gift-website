@@ -52,14 +52,16 @@ const GiftList = () => {
         console.log('当前筛选条件:', { selectedTags, searchKeyword });
         
         setLoading(true);
-        const params = {
-          tags: selectedTags.join(','),
-          keyword: searchKeyword || undefined,
-          status: 'published'
-        };
+        const params = new URLSearchParams();
+        if (selectedTags.length > 0) {
+          params.append('tags', selectedTags.join(','));
+        }
+        if (searchKeyword) {
+          params.append('keyword', searchKeyword);
+        }
 
-        console.log('请求参数:', params);
-        const data = await api.get('/api/gifts', { params });
+        console.log('请求参数:', params.toString());
+        const data = await api.get(`/api/gifts?${params.toString()}`);
         console.log('获取到的礼物列表:', data);
         
         if (Array.isArray(data)) {
@@ -141,16 +143,24 @@ const GiftList = () => {
    * @returns {string} 分类中文名
    */
   const getCategoryName = (category) => {
-    const categoryMap = {
-      'MBTI': 'MBTI类型',
-      'gender': '性别',
-      'age': '年龄段',
-      'relationship': '关系',
-      'price': '价格区间',
-      'giftCategory': '礼物类型',
-      'zodiac': '星座'
-    };
-    return categoryMap[category] || category;
+    switch (category) {
+      case 'MBTI':
+        return 'MBTI类型';
+      case '星座':
+        return '星座';
+      case '节日':
+        return '节日';
+      case '生日':
+        return '生日';
+      case '纪念日':
+        return '纪念日';
+      case '礼物':
+        return '礼物';
+      case '标签':
+        return '标签';
+      default:
+        return category;
+    }
   };
 
   return (
@@ -176,9 +186,9 @@ const GiftList = () => {
               <div className="tag-list">
                 {categoryTags.map((tag) => (
                   <button
-                    key={tag._id}
-                    className={`tag ${selectedTags.includes(tag._id) ? 'active' : ''}`}
-                    onClick={() => handleTagSelect(tag._id)}
+                    key={tag.id}
+                    className={`tag ${selectedTags.includes(tag.id) ? 'active' : ''}`}
+                    onClick={() => handleTagSelect(tag.id)}
                   >
                     {tag.name}
                   </button>
@@ -205,7 +215,6 @@ const GiftList = () => {
                 key={gift._id}
                 {...gift}
                 onClick={() => handleGiftClick(gift._id)}
-                expanded={expandedGiftId === gift._id}
               />
             ))}
           </div>

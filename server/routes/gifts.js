@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const Gift = require('../models/Gift');
-const auth = require('../middleware/auth');
 
 /**
  * @route GET /api/gifts
@@ -14,11 +13,8 @@ router.get('/', async (req, res) => {
     const { tags, keyword, status } = req.query;
     const query = {};
 
-    // 根据状态筛选
-    if (status) {
-      query.status = status;
-      console.log('添加状态筛选:', status);
-    }
+    // 默认只返回已发布的礼物
+    query.status = 'published';
 
     // 根据标签筛选
     if (tags) {
@@ -43,14 +39,9 @@ router.get('/', async (req, res) => {
 
     console.log(`成功获取 ${gifts.length} 个礼物`);
     
-    if (gifts.length === 0) {
-      console.log('未找到符合条件的礼物');
-    }
-
     res.json(gifts);
   } catch (error) {
     console.error('获取礼物列表失败:', error);
-    console.error('错误堆栈:', error.stack);
     res.status(500).json({ 
       message: '获取礼物列表失败',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -80,7 +71,7 @@ router.get('/:id', async (req, res) => {
  * @description 创建新礼物
  * @access Private
  */
-router.post('/', auth, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const gift = new Gift({
       name: req.body.name,
@@ -104,7 +95,7 @@ router.post('/', auth, async (req, res) => {
  * @description 更新礼物
  * @access Private
  */
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const gift = await Gift.findById(req.params.id);
     if (!gift) {
@@ -129,7 +120,7 @@ router.put('/:id', auth, async (req, res) => {
  * @description 删除礼物
  * @access Private
  */
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const gift = await Gift.findById(req.params.id);
     if (!gift) {

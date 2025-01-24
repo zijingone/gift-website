@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const Tag = require('../models/Tag');
-const auth = require('../middleware/auth');
 
 /**
  * @route GET /api/tags
@@ -16,7 +15,6 @@ router.get('/', async (req, res) => {
     res.json(tags);
   } catch (error) {
     console.error('获取标签列表失败:', error);
-    console.error('错误堆栈:', error.stack);
     res.status(500).json({ 
       message: '获取标签列表失败',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
