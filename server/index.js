@@ -18,8 +18,11 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
-// 服务静态文件
-app.use(express.static(path.join(__dirname, '../dist')));
+// 请求日志中间件
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
 
 // API 路由
 app.use('/api/auth', authRoutes);
@@ -32,18 +35,28 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: '服务器运行正常' });
 });
 
-// 所有非 API 请求返回 index.html
-app.get('/*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
+// 静态文件路由 - 确保在通配符路由之前
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// 所有其他请求返回 index.html
+app.get('*', (req, res) => {
+  console.log('Serving index.html for path:', req.path);
+  res.sendFile(path.join(__dirname, '../dist/index.html'), err => {
+    if (err) {
+      console.error('Error sending file:', err);
+      res.status(500).send('Error loading page');
+    }
+  });
 });
 
 // 错误处理中间件
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('Server error:', err.stack);
   res.status(500).json({ message: '服务器错误' });
 });
 
 // 启动服务器
 app.listen(PORT, () => {
   console.log(`服务器运行在端口 ${PORT}`);
+  console.log(`静态文件目录: ${path.join(__dirname, '../dist')}`);
 }); 
