@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Card, Tag, Spin, Empty, Input, Button } from 'antd';
-import axios from 'axios';
+import GiftCard from '../components/GiftCard';
+import { mockApi, mockTags } from '../mockData';
 import '../styles/main.css';
-
-const { Search } = Input;
 
 /**
  * 礼物列表页面组件
@@ -32,9 +30,9 @@ const GiftList = () => {
     const fetchTags = async () => {
       try {
         console.log('开始获取标签列表...');
-        const response = await axios.get('/api/tags');
-        console.log('获取到的标签列表:', response.data);
-        setTags(response.data);
+        const data = await mockApi.getTags();
+        console.log('获取到的标签列表:', data);
+        setTags(data);
       } catch (error) {
         console.error('获取标签列表失败:', error);
       }
@@ -54,18 +52,19 @@ const GiftList = () => {
         console.log('当前筛选条件:', { selectedTags, searchKeyword });
         
         setLoading(true);
-        const response = await axios.get('/api/gifts', {
-          params: {
-            tags: selectedTags.join(','),
-            keyword: searchKeyword,
-            status: 'published'
-          }
-        });
-        console.log('获取到的礼物列表:', response.data);
+        const params = {
+          tags: selectedTags,
+          keyword: searchKeyword || undefined,
+          status: undefined
+        };
+
+        console.log('请求参数:', params);
+        const data = await mockApi.getGifts(params);
+        console.log('获取到的礼物列表:', data);
         
-        if (Array.isArray(response.data)) {
-          console.log('设置礼物列表:', response.data);
-          setGifts(response.data);
+        if (Array.isArray(data)) {
+          console.log('设置礼物列表:', data);
+          setGifts(data);
         } else {
           console.log('没有获取到礼物数据或数据为空');
           setGifts([]);
@@ -100,8 +99,9 @@ const GiftList = () => {
    * @function
    * @param {React.FormEvent} e - 表单提交事件
    */
-  const handleSearch = (value) => {
-    setSearchKeyword(value);
+  const handleSearch = (e) => {
+    e.preventDefault();
+    // 搜索逻辑保持不变
   };
 
   /**
@@ -119,7 +119,7 @@ const GiftList = () => {
    * @param {number} giftId - 被点击的礼物ID
    */
   const handleGiftClick = (giftId) => {
-    navigate(`/gifts/${giftId}`);
+    setExpandedGiftId(expandedGiftId === giftId ? null : giftId);
   };
 
   /**
@@ -168,49 +168,142 @@ const GiftList = () => {
    * @returns {Array<{id: string, name: string}>} 标签对象列表
    */
   const getTagObjects = (tagIds) => {
-    return tagIds.map(id => tags.find(tag => tag.id === id)).filter(Boolean);
+    return tagIds.map(id => mockTags.find(tag => tag.id === id)).filter(Boolean);
   };
 
   return (
-    <div className="gift-list-container">
-      <div className="search-section">
-        <Search
-          placeholder="搜索礼物..."
-          allowClear
-          enterButton="搜索"
-          size="large"
-          onSearch={handleSearch}
-        />
-      </div>
+    <div className="gift-list-page">
+      <aside className="gift-list-page__sidebar">
+        <h2>礼物探索</h2>
+        <h3>筛选条件</h3>
 
-      {loading ? (
-        <div className="loading-container">
-          <Spin size="large" />
-        </div>
-      ) : gifts.length > 0 ? (
-        <div className="gift-grid">
-          {gifts.map((gift) => (
-            <Card
-              key={gift._id}
-              hoverable
-              cover={gift.coverImage && <img alt={gift.name} src={gift.coverImage} />}
-              onClick={() => handleGiftClick(gift._id)}
-              className="gift-card"
-            >
-              <Card.Meta
-                title={gift.name}
-                description={gift.description}
-              />
-              <div className="gift-tags">
-                {gift.tags && gift.tags.map(tag => (
-                  <Tag key={tag._id}>{tag.name}</Tag>
+        <form className="search-bar" onSubmit={handleSearch}>
+          <input
+            type="text"
+            className="search-bar__input"
+            placeholder="搜索礼物、标签或关键词..."
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+          />
+        </form>
+
+        <div className="filters">
+          {Object.entries(groupedTags).map(([category, categoryTags]) => (
+            <div key={category} className="tag-category">
+              <h4>{getCategoryName(category)}</h4>
+              <div className="tag-list">
+                {categoryTags.map((tag) => (
+                  <button
+                    key={tag.id}
+                    className={`tag ${selectedTags.includes(tag.id) ? 'active' : ''}`}
+                    onClick={() => handleTagSelect(tag.id)}
+                  >
+                    {tag.name}
+                  </button>
                 ))}
               </div>
-            </Card>
+            </div>
           ))}
         </div>
-      ) : (
-        <Empty description="暂无礼物" />
+
+        {selectedTags.length > 0 && (
+          <button className="clear-filters" onClick={handleClearFilters}>
+            清除筛选
+          </button>
+        )}
+      </aside>
+
+      <main className="gift-list-page__main">
+        {loading ? (
+          <div className="loading">加载中...</div>
+        ) : gifts.length > 0 ? (
+          <div className="gift-list">
+            {gifts.map((gift) => (
+              <GiftCard
+                key={`gift-${gift.id}`}
+                {...gift}
+                tags={getTagObjects(gift.tags)}
+                onClick={() => handleGiftClick(gift.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="no-gifts">暂无礼物</div>
+        )}
+      </main>
+
+      {expandedGiftId && (
+        <div className="gift-detail-overlay" onClick={() => setExpandedGiftId(null)}>
+          <div className="gift-detail-modal" onClick={e => e.stopPropagation()}>
+            <button 
+              className="gift-detail-modal__close"
+              onClick={() => setExpandedGiftId(null)}
+            >
+              ×
+            </button>
+            {gifts.filter(gift => gift.id === expandedGiftId).map(gift => (
+              <div key={`modal-${gift.id}`} className="gift-detail-modal__content">
+                <div className="gift-detail-modal__header">
+                  <div className="gift-detail-modal__image">
+                    <img src={gift.coverImage} alt={gift.name} />
+                  </div>
+                  <div className="gift-detail-modal__info">
+                    <h2>{gift.name}</h2>
+                    <div className="gift-detail-modal__price">¥{gift.price}</div>
+                    <div className="gift-detail-modal__tags">
+                      {gift.tags?.map(tag => (
+                        <span key={`tag-${tag.id}`} className="tag">{tag.name}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="gift-detail-modal__body">
+                  {gift.description && (
+                    <div className="gift-detail__description">
+                      {gift.description.split('\n').map((paragraph, index) => (
+                        <p key={`desc-${gift.id}-${index}`}>{paragraph}</p>
+                      ))}
+                    </div>
+                  )}
+                  {gift.background && (
+                    <div className="gift-detail__background">
+                      <h3>背景故事</h3>
+                      {gift.background.split('\n').map((paragraph, index) => (
+                        <p key={`bg-${gift.id}-${index}`}>{paragraph}</p>
+                      ))}
+                    </div>
+                  )}
+                  {gift.features && (
+                    <div className="gift-detail__features">
+                      <h3>产品特点</h3>
+                      {gift.features.split('\n').map((paragraph, index) => (
+                        <p key={`feat-${gift.id}-${index}`}>{paragraph}</p>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {gift.modules && gift.modules.length > 0 && (
+                    <div className="gift-detail__modules">
+                      {gift.modules.map((module, moduleIndex) => (
+                        <div key={`module-${gift.id}-${moduleIndex}`} className="content-module">
+                          {module.sections.map((section, sectionIndex) => (
+                            <div key={`section-${gift.id}-${moduleIndex}-${sectionIndex}`} className="module-section">
+                              {section.type === 'title' && <h3>{section.content}</h3>}
+                              {section.type === 'text' && <p>{section.content}</p>}
+                              {section.type === 'image' && section.content && (
+                                <img src={section.content} alt={`内容图片 ${sectionIndex + 1}`} />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
