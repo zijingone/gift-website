@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import GiftCard from '../components/GiftCard';
-import { mockApi, mockTags } from '../mockData';
+import axios from 'axios';
 import '../styles/main.css';
 
 /**
@@ -30,9 +30,9 @@ const GiftList = () => {
     const fetchTags = async () => {
       try {
         console.log('开始获取标签列表...');
-        const data = await mockApi.getTags();
-        console.log('获取到的标签列表:', data);
-        setTags(data);
+        const response = await axios.get('/api/tags');
+        console.log('获取到的标签列表:', response.data);
+        setTags(response.data);
       } catch (error) {
         console.error('获取标签列表失败:', error);
       }
@@ -53,13 +53,14 @@ const GiftList = () => {
         
         setLoading(true);
         const params = {
-          tags: selectedTags,
+          tags: selectedTags.join(','),
           keyword: searchKeyword || undefined,
-          status: undefined
+          status: 'published'
         };
 
         console.log('请求参数:', params);
-        const data = await mockApi.getGifts(params);
+        const response = await axios.get('/api/gifts', { params });
+        const data = response.data;
         console.log('获取到的礼物列表:', data);
         
         if (Array.isArray(data)) {
@@ -116,7 +117,7 @@ const GiftList = () => {
   /**
    * 处理礼物卡片点击
    * @function
-   * @param {number} giftId - 被点击的礼物ID
+   * @param {string} giftId - 被点击的礼物ID
    */
   const handleGiftClick = (giftId) => {
     setExpandedGiftId(expandedGiftId === giftId ? null : giftId);
@@ -124,7 +125,7 @@ const GiftList = () => {
 
   /**
    * 按类别对标签进行分组
-   * @type {Object.<string, Array<{id: string, name: string, category: string}>>}
+   * @type {Object.<string, Array<{_id: string, name: string, category: string}>>}
    */
   const groupedTags = tags.reduce((acc, tag) => {
     if (!acc[tag.category]) {
@@ -161,16 +162,6 @@ const GiftList = () => {
     }
   };
 
-  /**
-   * 将标签ID转换为完整的标签对象
-   * @function
-   * @param {Array<string>} tagIds - 标签ID列表
-   * @returns {Array<{id: string, name: string}>} 标签对象列表
-   */
-  const getTagObjects = (tagIds) => {
-    return tagIds.map(id => mockTags.find(tag => tag.id === id)).filter(Boolean);
-  };
-
   return (
     <div className="gift-list-page">
       <aside className="gift-list-page__sidebar">
@@ -194,9 +185,9 @@ const GiftList = () => {
               <div className="tag-list">
                 {categoryTags.map((tag) => (
                   <button
-                    key={tag.id}
-                    className={`tag ${selectedTags.includes(tag.id) ? 'active' : ''}`}
-                    onClick={() => handleTagSelect(tag.id)}
+                    key={tag._id}
+                    className={`tag ${selectedTags.includes(tag._id) ? 'active' : ''}`}
+                    onClick={() => handleTagSelect(tag._id)}
                   >
                     {tag.name}
                   </button>
@@ -220,10 +211,9 @@ const GiftList = () => {
           <div className="gift-list">
             {gifts.map((gift) => (
               <GiftCard
-                key={`gift-${gift.id}`}
+                key={`gift-${gift._id}`}
                 {...gift}
-                tags={getTagObjects(gift.tags)}
-                onClick={() => handleGiftClick(gift.id)}
+                onClick={() => handleGiftClick(gift._id)}
               />
             ))}
           </div>
@@ -241,8 +231,8 @@ const GiftList = () => {
             >
               ×
             </button>
-            {gifts.filter(gift => gift.id === expandedGiftId).map(gift => (
-              <div key={`modal-${gift.id}`} className="gift-detail-modal__content">
+            {gifts.filter(gift => gift._id === expandedGiftId).map(gift => (
+              <div key={`modal-${gift._id}`} className="gift-detail-modal__content">
                 <div className="gift-detail-modal__header">
                   <div className="gift-detail-modal__image">
                     <img src={gift.coverImage} alt={gift.name} />
@@ -252,7 +242,7 @@ const GiftList = () => {
                     <div className="gift-detail-modal__price">¥{gift.price}</div>
                     <div className="gift-detail-modal__tags">
                       {gift.tags?.map(tag => (
-                        <span key={`tag-${tag.id}`} className="tag">{tag.name}</span>
+                        <span key={`tag-${tag._id}`} className="tag">{tag.name}</span>
                       ))}
                     </div>
                   </div>
@@ -261,7 +251,7 @@ const GiftList = () => {
                   {gift.description && (
                     <div className="gift-detail__description">
                       {gift.description.split('\n').map((paragraph, index) => (
-                        <p key={`desc-${gift.id}-${index}`}>{paragraph}</p>
+                        <p key={`desc-${gift._id}-${index}`}>{paragraph}</p>
                       ))}
                     </div>
                   )}
@@ -269,7 +259,7 @@ const GiftList = () => {
                     <div className="gift-detail__background">
                       <h3>背景故事</h3>
                       {gift.background.split('\n').map((paragraph, index) => (
-                        <p key={`bg-${gift.id}-${index}`}>{paragraph}</p>
+                        <p key={`bg-${gift._id}-${index}`}>{paragraph}</p>
                       ))}
                     </div>
                   )}
@@ -277,25 +267,7 @@ const GiftList = () => {
                     <div className="gift-detail__features">
                       <h3>产品特点</h3>
                       {gift.features.split('\n').map((paragraph, index) => (
-                        <p key={`feat-${gift.id}-${index}`}>{paragraph}</p>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {gift.modules && gift.modules.length > 0 && (
-                    <div className="gift-detail__modules">
-                      {gift.modules.map((module, moduleIndex) => (
-                        <div key={`module-${gift.id}-${moduleIndex}`} className="content-module">
-                          {module.sections.map((section, sectionIndex) => (
-                            <div key={`section-${gift.id}-${moduleIndex}-${sectionIndex}`} className="module-section">
-                              {section.type === 'title' && <h3>{section.content}</h3>}
-                              {section.type === 'text' && <p>{section.content}</p>}
-                              {section.type === 'image' && section.content && (
-                                <img src={section.content} alt={`内容图片 ${sectionIndex + 1}`} />
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                        <p key={`feat-${gift._id}-${index}`}>{paragraph}</p>
                       ))}
                     </div>
                   )}
