@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import GiftCard from '../components/GiftCard';
-const api = require('../api');
+import api from '/src/api';
 import '../styles/main.css';
 
 /**
